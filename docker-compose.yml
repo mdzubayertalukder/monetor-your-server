@@ -1,0 +1,38 @@
+services:
+  pulseops:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pulseops-monitor:latest
+    container_name: pulseops-server-monitor
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8088}:8088"
+    volumes:
+      # Docker engine socket for container health, stats and error inspection
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Host logs for tailing system and error logs
+      - /var/log:/var/log:ro
+      # Persistent storage for metrics history and alerts
+      - pulseops_data:/app/data
+    environment:
+      - PORT=8088
+      - HOST=0.0.0.0
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - LOG_PATHS=/var/log/syslog,/var/log/nginx/error.log,/var/log/messages
+      - ALERT_CPU_THRESHOLD=85.0
+      - ALERT_RAM_THRESHOLD=90.0
+      - ALERT_DISK_THRESHOLD=90.0
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+      - GENERIC_WEBHOOK_URL=${GENERIC_WEBHOOK_URL:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pulseops_data:
+    driver: local

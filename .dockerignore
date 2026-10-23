@@ -1,0 +1,10 @@
+**/node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.env
+data/
+servermon.db
