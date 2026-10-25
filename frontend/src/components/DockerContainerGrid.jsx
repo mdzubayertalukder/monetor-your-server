@@ -8,15 +8,18 @@ import {
   AlertCircle, 
   ShieldAlert,
   Terminal,
-  Square,
-  Play
+  PowerOff,
+  Play,
+  RotateCcw
 } from 'lucide-react';
-import { restartContainer } from '../services/api';
+import { restartContainer, stopContainer, startContainer } from '../services/api';
 
 export default function DockerContainerGrid({ containersData, onOpenLogsModal, onRefresh }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [restartingId, setRestartingId] = useState(null);
+  const [stoppingId, setStoppingId] = useState(null);
+  const [startingId, setStartingId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
 
   const isDockerAvailable = containersData?.docker_available !== false;
@@ -50,6 +53,39 @@ export default function DockerContainerGrid({ containersData, onOpenLogsModal, o
       setTimeout(() => setActionMessage(null), 4000);
     } finally {
       setRestartingId(null);
+    }
+  };
+
+  const handleStop = async (id, name) => {
+    if (!window.confirm(`Turn OFF (stop) Docker container '${name}'?`)) return;
+    setStoppingId(id);
+    setActionMessage(`Stopping container ${name}...`);
+    try {
+      await stopContainer(id);
+      setActionMessage(`Container ${name} turned OFF.`);
+      setTimeout(() => setActionMessage(null), 3000);
+      onRefresh();
+    } catch (err) {
+      setActionMessage(`Failed to stop ${name}: ${err?.response?.data?.detail || err.message}`);
+      setTimeout(() => setActionMessage(null), 4000);
+    } finally {
+      setStoppingId(null);
+    }
+  };
+
+  const handleStart = async (id, name) => {
+    setStartingId(id);
+    setActionMessage(`Starting container ${name}...`);
+    try {
+      await startContainer(id);
+      setActionMessage(`Container ${name} turned ON.`);
+      setTimeout(() => setActionMessage(null), 3000);
+      onRefresh();
+    } catch (err) {
+      setActionMessage(`Failed to start ${name}: ${err?.response?.data?.detail || err.message}`);
+      setTimeout(() => setActionMessage(null), 4000);
+    } finally {
+      setStartingId(null);
     }
   };
 
@@ -157,12 +193,16 @@ export default function DockerContainerGrid({ containersData, onOpenLogsModal, o
               <th className="py-2.5 px-4">Image Source</th>
               <th className="py-2.5 px-4">Exposed Ports</th>
               <th className="py-2.5 px-4">Restarts</th>
-              <th className="py-2.5 px-4 text-right">Actions</th>
+              <th className="py-2.5 px-4 text-right">Container Control</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ops-750 text-slate-300">
             {filteredContainers.map((c) => {
               const isRestarting = restartingId === c.id;
+              const isStopping = stoppingId === c.id;
+              const isStarting = startingId === c.id;
+              const isBusy = isRestarting || isStopping || isStarting;
+              const isSelf = c.name === "pulseops-server-monitor" || c.name === "servermon-app";
 
               return (
                 <tr key={c.id} className="hover:bg-ops-850/60 transition-colors">
@@ -174,6 +214,11 @@ export default function DockerContainerGrid({ containersData, onOpenLogsModal, o
                         {c.name}
                       </span>
                       <span className="text-slate-500 text-[10px]">#{c.id}</span>
+                      {isSelf && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold">
+                          SELF
+                        </span>
+                      )}
                     </div>
                   </td>
 
@@ -217,26 +262,60 @@ export default function DockerContainerGrid({ containersData, onOpenLogsModal, o
                     )}
                   </td>
 
-                  {/* Actions */}
+                  {/* Lifecycle Actions */}
                   <td className="py-2.5 px-4 text-right">
                     <div className="flex items-center justify-end space-x-1.5">
+                      
+                      {/* Tail Logs Button */}
                       <button
                         onClick={() => onOpenLogsModal(c.id, c.name)}
-                        className="px-2 py-0.5 rounded bg-ops-800 hover:bg-ops-750 border border-ops-700 text-slate-300 hover:text-white flex items-center space-x-1 text-[11px]"
+                        className="px-2 py-1 rounded bg-ops-800 hover:bg-ops-750 border border-ops-700 text-slate-300 hover:text-white flex items-center space-x-1 text-[11px]"
                         title="Tail stdout/stderr logs"
                       >
                         <Terminal className="w-3 h-3 text-sky-400" />
-                        <span>Logs</span>
+                        <span className="hidden sm:inline">Logs</span>
                       </button>
 
-                      <button
-                        onClick={() => handleRestart(c.id, c.name)}
-                        disabled={isRestarting}
-                        className="p-1 rounded bg-ops-800 hover:bg-ops-750 border border-ops-700 text-slate-400 hover:text-amber-400"
-                        title="SIGTERM & Restart"
-                      >
-                        <RotateCw className={`w-3 h-3 ${isRestarting ? 'animate-spin text-sky-400' : ''}`} />
-                      </button>
+                      {/* Turn Off / Stop Button (When Running) */}
+                      {c.status === 'running' ? (
+                        <button
+                          onClick={() => handleStop(c.id, c.name)}
+                          disabled={isBusy || isSelf}
+                          className={`px-2 py-1 rounded border flex items-center space-x-1 text-[11px] font-medium transition-colors ${
+                            isSelf
+                              ? 'opacity-40 cursor-not-allowed bg-ops-950 border-ops-750 text-slate-500'
+                              : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30 hover:border-rose-500/50'
+                          }`}
+                          title={isSelf ? "Cannot turn off PulseOps monitor itself" : "Turn OFF / Stop this container"}
+                        >
+                          <PowerOff className={`w-3 h-3 ${isStopping ? 'animate-spin' : 'text-rose-400'}`} />
+                          <span>Stop</span>
+                        </button>
+                      ) : (
+                        /* Turn On / Start Button (When Stopped) */
+                        <button
+                          onClick={() => handleStart(c.id, c.name)}
+                          disabled={isBusy}
+                          className="px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 flex items-center space-x-1 text-[11px] font-medium transition-colors"
+                          title="Turn ON / Start this container"
+                        >
+                          <Play className={`w-3 h-3 ${isStarting ? 'animate-spin' : 'text-emerald-400'}`} />
+                          <span>Start</span>
+                        </button>
+                      )}
+
+                      {/* Restart Button (When Running) */}
+                      {c.status === 'running' && (
+                        <button
+                          onClick={() => handleRestart(c.id, c.name)}
+                          disabled={isBusy}
+                          className="p-1.5 rounded bg-ops-800 hover:bg-ops-750 border border-ops-700 text-slate-400 hover:text-amber-400 transition-colors"
+                          title="Restart Container"
+                        >
+                          <RotateCw className={`w-3 h-3 ${isRestarting ? 'animate-spin text-sky-400' : ''}`} />
+                        </button>
+                      )}
+
                     </div>
                   </td>
 

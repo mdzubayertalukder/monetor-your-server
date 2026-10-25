@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 from backend.app.collectors.docker_monitor import (
     get_containers_summary,
     get_container_logs,
-    restart_container
+    restart_container,
+    stop_container,
+    start_container
 )
 
 router = APIRouter(prefix="/api/containers", tags=["Containers"])
@@ -23,4 +25,18 @@ async def restart_single_container(container_id: str):
     result = restart_container(container_id)
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Failed to restart"))
+    return result
+
+@router.post("/{container_id}/stop")
+async def stop_single_container(container_id: str):
+    result = stop_container(container_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to stop container"))
+    return result
+
+@router.post("/{container_id}/start")
+async def start_single_container(container_id: str):
+    result = start_container(container_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to start container"))
     return result

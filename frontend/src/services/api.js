@@ -12,6 +12,8 @@ export const fetchProcesses = (limit = 10) => api.get(`/metrics/processes?limit=
 export const fetchContainers = () => api.get('/containers').then(r => r.data);
 export const fetchContainerLogs = (id, tail = 150) => api.get(`/containers/${id}/logs?tail=${tail}`).then(r => r.data);
 export const restartContainer = (id) => api.post(`/containers/${id}/restart`).then(r => r.data);
+export const stopContainer = (id) => api.post(`/containers/${id}/stop`).then(r => r.data);
+export const startContainer = (id) => api.post(`/containers/${id}/start`).then(r => r.data);
 
 export const fetchErrors = (params = {}) => api.get('/logs/errors', { params }).then(r => r.data);
 export const triggerTestError = (payload) => api.post('/logs/test-error', payload).then(r => r.data);

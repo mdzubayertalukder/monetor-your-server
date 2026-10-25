@@ -9,8 +9,8 @@ services:
     ports:
       - "${PORT:-8088}:8088"
     volumes:
-      # Docker engine socket for container health, stats and error inspection
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Docker engine socket for container health, stats, logs and lifecycle control
+      - /var/run/docker.sock:/var/run/docker.sock
       # Host logs for tailing system and error logs
       - /var/log:/var/log:ro
       # Persistent storage for metrics history and alerts

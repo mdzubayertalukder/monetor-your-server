@@ -164,3 +164,27 @@ def restart_container(container_id: str) -> Dict[str, Any]:
         return {"success": True, "message": f"Container {container.name} restarted successfully"}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+def stop_container(container_id: str, timeout: int = 10) -> Dict[str, Any]:
+    client = get_docker_client()
+    if not client:
+        return {"success": False, "error": "Docker not available"}
+    try:
+        container = client.containers.get(container_id)
+        if container.name in ("pulseops-server-monitor", "servermon-app"):
+            return {"success": False, "error": "Cannot stop PulseOps monitor container from its own dashboard"}
+        container.stop(timeout=timeout)
+        return {"success": True, "message": f"Container {container.name} stopped successfully"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def start_container(container_id: str) -> Dict[str, Any]:
+    client = get_docker_client()
+    if not client:
+        return {"success": False, "error": "Docker not available"}
+    try:
+        container = client.containers.get(container_id)
+        container.start()
+        return {"success": True, "message": f"Container {container.name} started successfully"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
