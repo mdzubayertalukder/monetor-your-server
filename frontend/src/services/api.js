@@ -30,4 +30,15 @@ export const resolveAlert = (id) => api.post(`/alerts/${id}/resolve`).then(r => 
 export const acknowledgeAllAlerts = () => api.post('/alerts/acknowledge-all').then(r => r.data);
 export const clearAlertsHistory = () => api.delete('/alerts').then(r => r.data);
 
+// Kubernetes Cluster & Workloads
+export const fetchK8sOverview = () => api.get('/k8s/overview').then(r => r.data);
+export const fetchK8sStatus = () => api.get('/k8s/status').then(r => r.data);
+export const fetchK8sPods = (params = {}) => api.get('/k8s/pods', { params }).then(r => r.data);
+export const fetchK8sPodLogs = (namespace, podName, params = {}) => 
+  api.get(`/k8s/pods/${namespace}/${podName}/logs`, { params }).then(r => r.data);
+export const restartK8sPod = (namespace, podName) => 
+  api.post(`/k8s/pods/${namespace}/${podName}/restart`).then(r => r.data);
+export const scaleK8sDeployment = (namespace, deploymentName, replicas) => 
+  api.post(`/k8s/deployments/${namespace}/${deploymentName}/scale`, { replicas }).then(r => r.data);
+
 export default api;

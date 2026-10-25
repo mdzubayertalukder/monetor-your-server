@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pulseops-config
+  namespace: pulseops
+  labels:
+    app.kubernetes.io/name: pulseops
+data:
+  PORT: "8088"
+  HOST: "0.0.0.0"
+  METRICS_INTERVAL: "3"
+  ALERT_CPU_THRESHOLD: "85.0"
+  ALERT_RAM_THRESHOLD: "90.0"
+  ALERT_DISK_THRESHOLD: "90.0"
+  K8S_ENABLED: "true"

@@ -37,6 +37,12 @@
 
 ---
 
+### 5. Kubernetes Cluster & Workloads Console
+*Discovers and monitors Kubernetes Pods, Deployments, and Nodes. Detects `CrashLoopBackOff`, `OOMKilled`, `ImagePullBackOff`, and enables 1-click pod log streaming, pod restarts, and deployment scaling.*
+![Kubernetes Workloads](./docs/images/kubernetes.png)
+
+---
+
 ## 💡 What is This Project?
 
 When running production or development servers, applications crash, memory fills up, databases exhaust connection pools, and containers exit unexpectedly.
@@ -101,7 +107,9 @@ The platform operates across 3 simple layers:
 | 🚨 **Server Error Catching** | Captures real errors from Linux syslog, Nginx, and container stderr streams in real-time. |
 | 🛡️ **Dedicated Incidents Page** | Review active issues, copy stacktraces, and use **"Acknowledge All"** to clear alerts with 1 click. |
 | 📊 **htop-Style CPU Heatstrip** | Visualizes individual load across all CPU cores side-by-side. |
-| 🐳 **Docker Workload Control** | Inspect health, view live container logs, and restart containers directly from the UI. |
+| 🐳 **Docker Workload Control** | Inspect health, view live container logs, and stop/start/restart containers directly from the UI. |
+| ☸️ **Kubernetes (K8s) Workloads** | Auto-detects in-cluster ServiceAccounts or mounted kubeconfig. Monitors Pods, Restarts, CrashLoopBackOff, tails pod logs, and scales Deployments. |
+| 🛡️ **Production K8s Manifests** | Ready-to-apply RBAC, Deployment, Service, and Kustomize manifests included under `k8s/`. |
 | 🌐 **Uptime Heartbeat Prober** | 30-block visual heartbeat strip for HTTP endpoints and TCP ports (MySQL `3306`, Redis `6379`). |
 | ⚡ **Fault Injection Tool** | Built-in "Inject Error" button and CLI tool to test your alerting pipeline anytime. |
 | 🔒 **100% Private & Self-Hosted** | Your server logs and data never leave your own server. |
@@ -156,15 +164,42 @@ python3 scripts/generate_test_errors.py --type crash
 
 ---
 
+## ☸️ Deploying to Kubernetes (Production Manifests)
+
+PulseOps is fully cloud-native and can be deployed directly into any Kubernetes cluster (AWS EKS, Google GKE, Azure AKS, Minikube, Kind, k3s, or bare-metal) with a single command:
+
+### 1-Command Deploy with Kustomize:
+```bash
+kubectl apply -k ./k8s/
+```
+
+This automatically provisions:
+- `Namespace`: `pulseops`
+- `ServiceAccount` & `ClusterRole` (RBAC with permissions to monitor pods, logs, nodes, and deployments)
+- `ConfigMap`: cluster-wide telemetry intervals & alert thresholds
+- `Deployment`: `pulseops-monitor` with automated liveness and readiness health probes
+- `Service`: `pulseops-service` (NodePort `30088`)
+- `Ingress`: `pulseops-ingress` with WebSocket routing support
+
+### Access Dashboard in Kubernetes:
+```bash
+# Port-forward to your local machine
+kubectl port-forward -n pulseops svc/pulseops-service 8088:8088
+```
+Then navigate to: **[http://localhost:8088/#kubernetes](http://localhost:8088/#kubernetes)**
+
+---
+
 ## ⌨️ Keyboard Shortcuts
 
-Navigate quickly between telemetry pages:
+Navigate quickly between telemetry views using your number keys:
 - <kbd>1</kbd> — Infrastructure Telemetry Dashboard
-- <kbd>2</kbd> — Incidents & Alerts Center (with Acknowledge All)
+- <kbd>2</kbd> — Incidents & Alerts Center (with 1-Click Acknowledge All)
 - <kbd>3</kbd> — Error Sentry & Log Stacktraces
 - <kbd>4</kbd> — Docker Containers Console
-- <kbd>5</kbd> — Heartbeat Uptime Probes
-- <kbd>6</kbd> — Kernel Process Inspector
+- <kbd>5</kbd> — Kubernetes Cluster & Workloads Console
+- <kbd>6</kbd> — Heartbeat Uptime Probes
+- <kbd>7</kbd> — Kernel Process Inspector
 
 ---
 
@@ -176,22 +211,37 @@ Navigate quickly between telemetry pages:
 ├── Dockerfile                      # Multi-stage production container build
 ├── .env.example                    # Environment settings template
 ├── start.sh                        # Fast startup script
-├── README.md                       # Documentation
+├── README.md                       # Comprehensive documentation
+├── k8s/                            # Production Kubernetes manifests
+│   ├── kustomization.yaml          # 1-command deployment manifest
+│   ├── namespace.yaml              # Isolated pulseops namespace
+│   ├── rbac.yaml                   # ServiceAccount & ClusterRole permissions
+│   ├── configmap.yaml              # App configuration
+│   ├── deployment.yaml             # K8s Deployment with health probes
+│   ├── service.yaml                # NodePort / ClusterIP service
+│   └── ingress.yaml                # Ingress configuration
 ├── docs/
-│   └── images/                     # Dashboard & Sentry screenshots
+│   └── images/                     # Production dashboard screenshots
 │       ├── dashboard.png
 │       ├── incidents.png
 │       ├── error_sentry.png
-│       └── containers.png
+│       ├── containers.png
+│       └── kubernetes.png
 ├── backend/
-│   ├── requirements.txt            # Python dependencies (FastAPI, psutil, docker)
+│   ├── requirements.txt            # Python dependencies (FastAPI, docker, kubernetes)
 │   └── app/
 │       ├── main.py                 # FastAPI application & background workers
-│       ├── config.py               # Environment variables
+│       ├── config.py               # Environment configuration
 │       ├── storage/database.py     # SQLite persistence layer
-│       ├── collectors/             # System, Docker, Log & Service checkers
+│       ├── collectors/             # System, Docker, K8s, Log & Service collectors
+│       │   ├── k8s_monitor.py      # Pods, Nodes, Deployments, logs & scaling
+│       │   ├── docker_monitor.py   # Container states, stats & logs
+│       │   ├── system_metrics.py   # CPU, RAM, Disk, Network
+│       │   └── log_collector.py    # Syslog, Nginx & container error watcher
 │       ├── alerts/                 # Threshold & notification dispatchers
 │       └── routes/                 # REST API endpoints & WebSockets
+│           ├── k8s.py              # Kubernetes REST endpoints
+│           └── ...
 ├── frontend/
 │   ├── package.json
 │   ├── vite.config.js
@@ -199,6 +249,8 @@ Navigate quickly between telemetry pages:
 │   └── src/
 │       ├── App.jsx                 # Stateful dashboard application
 │       └── components/             # High-density UI components
+│           ├── KubernetesGrid.jsx  # K8s Pods, Deployments & Nodes console
+│           └── ...
 └── scripts/
     └── generate_test_errors.py     # CLI fault injection simulator
 ```

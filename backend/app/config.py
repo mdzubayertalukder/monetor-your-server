@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     
     # Paths
     DOCKER_SOCKET_PATH: str = os.getenv("DOCKER_SOCKET_PATH", "/var/run/docker.sock")
+    KUBECONFIG_PATH: str = os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config"))
+    K8S_ENABLED: bool = os.getenv("K8S_ENABLED", "true").lower() == "true"
     LOG_PATHS: str = os.getenv("LOG_PATHS", "/var/log/syslog,/var/log/nginx/error.log,/var/log/messages")
     DB_PATH: str = os.getenv("DB_PATH", os.path.join(os.getcwd(), "servermon.db"))
     

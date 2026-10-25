@@ -15,10 +15,13 @@ services:
       - /var/log:/var/log:ro
       # Persistent storage for metrics history and alerts
       - pulseops_data:/app/data
+      # Optional: Uncomment to monitor a local/remote Kubernetes cluster via kubeconfig
+      # - ~/.kube/config:/root/.kube/config:ro
     environment:
       - PORT=8088
       - HOST=0.0.0.0
       - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      # - KUBECONFIG=/root/.kube/config
       - LOG_PATHS=/var/log/syslog,/var/log/nginx/error.log,/var/log/messages
       - ALERT_CPU_THRESHOLD=85.0
       - ALERT_RAM_THRESHOLD=90.0

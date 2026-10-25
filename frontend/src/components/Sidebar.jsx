@@ -11,7 +11,8 @@ import {
   Flame, 
   Clock, 
   ChevronRight,
-  HardDrive
+  HardDrive,
+  Boxes
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -47,8 +48,16 @@ export default function Sidebar({
       badge: containerCount?.running !== undefined ? `${containerCount.running}/${containerCount.total}` : null,
       badgeColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20'
     },
-    { id: 'services', label: 'Heartbeat Probes', icon: Radio, keyNum: '5' },
-    { id: 'processes', label: 'Process Inspector', icon: Cpu, keyNum: '6' },
+    { 
+      id: 'kubernetes', 
+      label: 'Kubernetes Workloads', 
+      icon: Boxes, 
+      keyNum: '5',
+      badge: 'K8s',
+      badgeColor: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+    },
+    { id: 'services', label: 'Heartbeat Probes', icon: Radio, keyNum: '6' },
+    { id: 'processes', label: 'Process Inspector', icon: Cpu, keyNum: '7' },
   ];
 
   const formatUptime = (seconds) => {

@@ -5,6 +5,7 @@ import MetricsOverview from './components/MetricsOverview';
 import CpuRamCharts from './components/CpuRamCharts';
 import ErrorLogStream from './components/ErrorLogStream';
 import DockerContainerGrid from './components/DockerContainerGrid';
+import KubernetesGrid from './components/KubernetesGrid';
 import ContainerLogModal from './components/ContainerLogModal';
 import ServicePingMonitor from './components/ServicePingMonitor';
 import ProcessList from './components/ProcessList';
@@ -26,7 +27,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTabState] = useState(() => {
     const hash = window.location.hash.replace('#', '');
-    return ['dashboard', 'incidents', 'errors', 'containers', 'services', 'processes'].includes(hash) ? hash : 'dashboard';
+    return ['dashboard', 'incidents', 'errors', 'containers', 'kubernetes', 'services', 'processes'].includes(hash) ? hash : 'dashboard';
   });
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -38,7 +39,7 @@ export default function App() {
   useEffect(() => {
     const onHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (['dashboard', 'incidents', 'errors', 'containers', 'services', 'processes'].includes(hash)) {
+      if (['dashboard', 'incidents', 'errors', 'containers', 'kubernetes', 'services', 'processes'].includes(hash)) {
         setActiveTabState(hash);
       }
     };
@@ -155,7 +156,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Keyboard navigation (1..6)
+  // Keyboard navigation (1..7)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
@@ -163,8 +164,9 @@ export default function App() {
       if (e.key === '2') setActiveTab('incidents');
       if (e.key === '3') setActiveTab('errors');
       if (e.key === '4') setActiveTab('containers');
-      if (e.key === '5') setActiveTab('services');
-      if (e.key === '6') setActiveTab('processes');
+      if (e.key === '5') setActiveTab('kubernetes');
+      if (e.key === '6') setActiveTab('services');
+      if (e.key === '7') setActiveTab('processes');
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -176,6 +178,7 @@ export default function App() {
       case 'incidents': return 'Incidents & Alert Center';
       case 'errors': return 'Error Sentry & Logs';
       case 'containers': return 'Docker Engine Workloads';
+      case 'kubernetes': return 'Kubernetes Cluster & Workloads';
       case 'services': return 'Heartbeat Uptime Probes';
       case 'processes': return 'Kernel Processes';
       default: return 'Overview';
@@ -292,7 +295,12 @@ export default function App() {
             />
           )}
 
-          {/* TAB 5: Services */}
+          {/* TAB 5: Kubernetes Cluster Workloads */}
+          {activeTab === 'kubernetes' && (
+            <KubernetesGrid />
+          )}
+
+          {/* TAB 6: Services */}
           {activeTab === 'services' && (
             <ServicePingMonitor
               services={services}
@@ -301,7 +309,7 @@ export default function App() {
             />
           )}
 
-          {/* TAB 6: Process Inspector */}
+          {/* TAB 7: Process Inspector */}
           {activeTab === 'processes' && (
             <ProcessList />
           )}
@@ -318,7 +326,7 @@ export default function App() {
           <div className="flex items-center space-x-3">
             <span>CONTAINER: pulseops-server-monitor:8088</span>
             <span>•</span>
-            <span className="text-slate-400">SHORTCUTS: [1..6] TAB NAVIGATION</span>
+            <span className="text-slate-400">SHORTCUTS: [1..7] TAB NAVIGATION</span>
           </div>
         </footer>
 

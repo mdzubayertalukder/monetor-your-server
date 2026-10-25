@@ -26,7 +26,8 @@ from backend.app.routes import (
     logs,
     services,
     alerts,
-    websocket
+    websocket,
+    k8s
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -147,6 +148,7 @@ app.include_router(containers.router)
 app.include_router(logs.router)
 app.include_router(services.router)
 app.include_router(alerts.router)
+app.include_router(k8s.router)
 app.include_router(websocket.router)
 
 # Mount frontend static files if built
